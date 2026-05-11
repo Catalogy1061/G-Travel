@@ -71,36 +71,19 @@ const UserWorldMap = ({ users }) => {
   const userDots = useMemo(() => {
     const dots = [];
     users.forEach((user, index) => {
-      // 1. Tentar usar coordenadas reais (checar múltiplos nomes de campos possíveis)
-      const lat = user.last_lat || user.lat;
-      const lng = user.last_lng || user.lng;
-
-      if (lat !== undefined && lng !== undefined && lat !== null && lng !== null) {
-        const coords = project(lat, lng);
-        if (coords) {
-          dots.push({
-            id: user.id || `coord-${index}`,
-            x: coords.x,
-            y: coords.y,
-            name: user.full_name
-          });
-          return;
-        }
-      }
-
-      // 2. Fallback para centro do país
+      // 1. Tentar mapear pelo país primeiro (mais estável para o dashboard atual)
       const normalizedName = normalizeCountry(user.country);
       const country = countryMap[normalizedName];
       
+      let x, y;
+
       if (country) {
-        let x, y;
-        
-        // Corrigir especificamente o Brasil se o GPS falhar (worldData.json está quebrado para o BR)
+        // Correção específica para o Brasil (worldData.json original está com erro)
         if (normalizedName === 'brazil') {
           x = 735; 
           y = 550;
         } 
-        // Corrigir outros centros quebrados (muito pequenos < 100 num mapa de 2000px)
+        // Usar centro do worldData se for válido (> 100px)
         else if (country.center && country.center.x > 100) {
           x = country.center.x;
           y = country.center.y;
@@ -112,17 +95,26 @@ const UserWorldMap = ({ users }) => {
             y = parseFloat(firstPoint[2]);
           }
         }
+      }
 
-        if (x !== undefined && !isNaN(x)) {
-          const jitterX = (Math.sin(index * 13) * 12);
-          const jitterY = (Math.cos(index * 17) * 12);
-          dots.push({
-            id: user.id || `country-${index}`,
-            x: x + jitterX,
-            y: y + jitterY,
-            name: user.full_name
-          });
+      // 2. Se falhar o país, tentar GPS como último recurso
+      if (x === undefined && user.last_lat && user.last_lng) {
+        const coords = project(user.last_lat, user.last_lng);
+        if (coords) {
+          x = coords.x;
+          y = coords.y;
         }
+      }
+
+      if (x !== undefined && !isNaN(x)) {
+        const jitterX = (Math.sin(index * 13) * 20);
+        const jitterY = (Math.cos(index * 17) * 20);
+        dots.push({
+          id: user.id || `dot-${index}`,
+          x: x + jitterX,
+          y: y + jitterY,
+          name: user.full_name
+        });
       }
     });
     return dots;
@@ -215,12 +207,12 @@ const UserWorldMap = ({ users }) => {
 
               {userDots.map((dot) => (
                 <g key={dot.id} className="pointer-events-none">
-                  <circle cx={dot.x} cy={dot.y} r="8" className="fill-blue-500/10" />
-                  <circle cx={dot.x} cy={dot.y} r="4" className="fill-blue-400">
+                  <circle cx={dot.x} cy={dot.y} r={8} className="fill-blue-500/10" />
+                  <circle cx={dot.x} cy={dot.y} r={4} className="fill-blue-400">
                     <animate attributeName="r" from="4" to="12" dur="2s" repeatCount="indefinite" />
                     <animate attributeName="opacity" from="0.6" to="0" dur="2s" repeatCount="indefinite" />
                   </circle>
-                  <circle cx={dot.x} cy={dot.y} r="3.5" className="fill-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
+                  <circle cx={dot.x} cy={dot.y} r={3.5} className="fill-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
                 </g>
               ))}
             </svg>
