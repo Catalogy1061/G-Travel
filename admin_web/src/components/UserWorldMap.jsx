@@ -21,7 +21,7 @@ const UserWorldMap = ({ users }) => {
   }, []);
 
   const normalizeCountry = (name) => {
-    if (!name) return 'Desconhecido';
+    if (!name) return 'desconhecido';
     const n = name.toLowerCase().trim();
     const variations = {
       'brasil': 'brazil',
@@ -43,6 +43,19 @@ const UserWorldMap = ({ users }) => {
     return variations[n] || n;
   };
 
+  // Converte Lat/Lng para coordenadas SVG (2000x857)
+  // Calibrado para o mapa Robinson/Miller do worldData.json
+  const project = (lat, lng) => {
+    if (lat === undefined || lng === undefined || lat === null || lng === null) return null;
+    
+    // Ajuste empírico para este mapa específico
+    // O mapa parece estar levemente deslocado e escalonado
+    const x = (lng + 175) * (2000 / 355); 
+    const y = (85 - lat) * (857 / 170);
+    
+    return { x, y };
+  };
+
   const countryStats = useMemo(() => {
     const stats = {};
     users.forEach(u => {
@@ -58,16 +71,58 @@ const UserWorldMap = ({ users }) => {
   const userDots = useMemo(() => {
     const dots = [];
     users.forEach((user, index) => {
+      // 1. Tentar usar coordenadas reais (checar múltiplos nomes de campos possíveis)
+      const lat = user.last_lat || user.lat;
+      const lng = user.last_lng || user.lng;
+
+      if (lat !== undefined && lng !== undefined && lat !== null && lng !== null) {
+        const coords = project(lat, lng);
+        if (coords) {
+          dots.push({
+            id: user.id || `coord-${index}`,
+            x: coords.x,
+            y: coords.y,
+            name: user.full_name
+          });
+          return;
+        }
+      }
+
+      // 2. Fallback para centro do país
       const normalizedName = normalizeCountry(user.country);
       const country = countryMap[normalizedName];
-      if (country && country.center) {
-        const jitterX = (Math.sin(index * 13) * 8);
-        const jitterY = (Math.cos(index * 17) * 8);
-        dots.push({
-          id: user.id || index,
-          x: country.center.x + jitterX,
-          y: country.center.y + jitterY,
-        });
+      
+      if (country) {
+        let x, y;
+        
+        // Corrigir especificamente o Brasil se o GPS falhar (worldData.json está quebrado para o BR)
+        if (normalizedName === 'brazil') {
+          x = 735; 
+          y = 550;
+        } 
+        // Corrigir outros centros quebrados (muito pequenos < 100 num mapa de 2000px)
+        else if (country.center && country.center.x > 100) {
+          x = country.center.x;
+          y = country.center.y;
+        } else {
+          // Extrair primeira coordenada do path SVG como fallback
+          const firstPoint = country.d.match(/M\s*([\d.-]+)[\s,]+([\d.-]+)/i);
+          if (firstPoint) {
+            x = parseFloat(firstPoint[1]);
+            y = parseFloat(firstPoint[2]);
+          }
+        }
+
+        if (x !== undefined && !isNaN(x)) {
+          const jitterX = (Math.sin(index * 13) * 12);
+          const jitterY = (Math.cos(index * 17) * 12);
+          dots.push({
+            id: user.id || `country-${index}`,
+            x: x + jitterX,
+            y: y + jitterY,
+            name: user.full_name
+          });
+        }
       }
     });
     return dots;
