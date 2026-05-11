@@ -9,6 +9,7 @@ function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showLogin, setShowLogin] = useState(false);
+  const [view, setView] = useState('landing'); // 'landing' ou 'admin'
 
   useEffect(() => {
     // Check initial session
@@ -25,6 +26,7 @@ function App() {
         setSession(session);
       } else {
         setSession(null);
+        setView('landing'); // Volta para landing ao deslogar
       }
     });
 
@@ -40,17 +42,28 @@ function App() {
     );
   }
 
-  if (session) {
+  // Se estiver logado e na visão admin, mostra o Dashboard
+  if (session && view === 'admin') {
     return (
       <div className="App dark min-h-screen bg-slate-950 text-slate-50">
-        <Dashboard />
+        <Dashboard onBackToLanding={() => setView('landing')} />
       </div>
     );
   }
 
+  // Caso contrário, mostra sempre a Landing Page
   return (
     <div className="App dark min-h-screen bg-slate-950 text-slate-50 relative">
-      <LandingPage onAdminClick={() => setShowLogin(true)} />
+      <LandingPage 
+        onAdminClick={() => {
+          if (session) {
+            setView('admin');
+          } else {
+            setShowLogin(true);
+          }
+        }} 
+        isLoggedIn={!!session}
+      />
       
       {showLogin && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-xl">
@@ -61,7 +74,10 @@ function App() {
             >
               Fechar
             </button>
-            <Login onLoginSuccess={() => setShowLogin(false)} />
+            <Login onLoginSuccess={() => {
+              setShowLogin(false);
+              setView('admin');
+            }} />
           </div>
         </div>
       )}

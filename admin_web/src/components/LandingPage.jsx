@@ -17,7 +17,7 @@ import {
   X
 } from 'lucide-react';
 
-const LandingPage = ({ onAdminClick }) => {
+const LandingPage = ({ onAdminClick, isLoggedIn }) => {
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -32,7 +32,7 @@ const LandingPage = ({ onAdminClick }) => {
 
   return (
     <div className="bg-slate-950 text-white selection:bg-purple-500/30 overflow-x-hidden font-sans">
-      <Header onAdminClick={onAdminClick} />
+      <Header onAdminClick={onAdminClick} isLoggedIn={isLoggedIn} />
       
       <main>
         <HeroSection />
@@ -46,14 +46,14 @@ const LandingPage = ({ onAdminClick }) => {
         <DownloadCTA />
       </main>
 
-      <Footer onAdminClick={onAdminClick} />
+      <Footer onAdminClick={onAdminClick} isLoggedIn={isLoggedIn} />
     </div>
   );
 };
 
 // --- Sub-componentes ---
 
-const Header = ({ onAdminClick }) => {
+const Header = ({ onAdminClick, isLoggedIn }) => {
   return (
     <nav className="fixed top-0 w-full z-[100] px-6 py-4">
       <motion.div 
@@ -62,7 +62,7 @@ const Header = ({ onAdminClick }) => {
         className="max-w-7xl mx-auto"
       >
         <div className="bg-slate-900/40 backdrop-blur-2xl border border-white/10 rounded-2xl px-6 py-3 flex items-center justify-between shadow-2xl shadow-purple-500/5">
-          <div className="flex items-center gap-3 group cursor-pointer">
+          <div className="flex items-center gap-3 group cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
             <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
               <Plane className="text-white fill-current" size={22} />
             </div>
@@ -81,7 +81,7 @@ const Header = ({ onAdminClick }) => {
               className="flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-white transition-colors"
             >
               <LayoutDashboard size={16} />
-              Área Admin
+              {isLoggedIn ? 'Dashboard' : 'Área Admin'}
             </button>
             <button className="bg-white text-black px-5 py-2 rounded-xl hover:bg-purple-500 hover:text-white transition-all duration-300 font-bold text-sm shadow-xl shadow-white/5">
               Baixar App
@@ -351,7 +351,7 @@ const DownloadCTA = () => (
   </section>
 );
 
-const Footer = ({ onAdminClick }) => (
+const Footer = ({ onAdminClick, isLoggedIn }) => (
   <footer className="py-20 px-6 border-t border-white/5 bg-slate-950">
     <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
       <div className="flex items-center gap-3">
@@ -370,7 +370,7 @@ const Footer = ({ onAdminClick }) => (
           onClick={onAdminClick}
           className="text-sm font-bold text-slate-400 hover:text-white transition-colors uppercase tracking-widest"
         >
-          Acesso Administrativo
+          {isLoggedIn ? 'Dashboard' : 'Acesso Administrativo'}
         </button>
         <div className="flex gap-4">
           <a href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors border border-white/10">

@@ -49,7 +49,7 @@ import { useDashboardData } from '../hooks/useDashboardData';
 import { supabase } from '../lib/supabase';
 import UserWorldMap from './UserWorldMap';
 
-export default function Dashboard() {
+export default function Dashboard({ onBackToLanding }) {
   const { profiles, loading, error } = useDashboardData();
   const [searchTerm, setSearchTerm] = useState('');
   const [countryFilter, setCountryFilter] = useState('all');
@@ -183,6 +183,9 @@ export default function Dashboard() {
             <Text className="text-slate-400">Gestão Premium de Viajantes</Text>
           </div>
           <Flex className="w-auto gap-4">
+            <Button variant="secondary" icon={Smartphone} onClick={onBackToLanding} className="bg-slate-900/50 border-slate-700 text-slate-300 hover:text-white">
+              Voltar p/ Site
+            </Button>
             <Button variant="secondary" icon={Download} onClick={exportCSV} className="bg-slate-900/50 border-slate-700 text-slate-300 hover:text-white">
               Exportar CSV
             </Button>
