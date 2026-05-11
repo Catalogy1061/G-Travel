@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { supabase, ADMIN_EMAIL } from './lib/supabase';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import LandingPage from './components/LandingPage';
 import { Text } from '@tremor/react';
 
 function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showLogin, setShowLogin] = useState(false);
 
   useEffect(() => {
     // Check initial session
@@ -31,16 +33,38 @@ function App() {
 
   if (loading) {
     return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-900">
-        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <Text className="text-white font-medium">Carregando G-TRAVEL Admin...</Text>
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-950">
+        <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4 shadow-lg shadow-purple-500/20"></div>
+        <Text className="text-white font-medium">Iniciando G-TRAVEL Experience...</Text>
+      </div>
+    );
+  }
+
+  if (session) {
+    return (
+      <div className="App dark min-h-screen bg-slate-950 text-slate-50">
+        <Dashboard />
       </div>
     );
   }
 
   return (
-    <div className="App dark min-h-screen bg-slate-950 text-slate-50">
-      {session ? <Dashboard /> : <Login onLoginSuccess={() => {}} />}
+    <div className="App dark min-h-screen bg-slate-950 text-slate-50 relative">
+      <LandingPage onAdminClick={() => setShowLogin(true)} />
+      
+      {showLogin && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-xl">
+          <div className="relative w-full max-w-md p-4">
+            <button 
+              onClick={() => setShowLogin(false)}
+              className="absolute top-8 right-8 text-slate-400 hover:text-white transition-colors"
+            >
+              Fechar
+            </button>
+            <Login onLoginSuccess={() => setShowLogin(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
